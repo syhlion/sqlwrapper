@@ -168,6 +168,21 @@ func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 	}()
 	return d.db.QueryRow(query, args...)
 }
+func (d *DB) Close() error {
+	return d.db.Close()
+}
+
+func (d *DB) Begin() (t *Tx, err error) {
+	tx, err := d.db.Begin()
+	if err != nil {
+		return
+	}
+	t = &Tx{
+		log: d.log,
+		tx:  tx,
+	}
+	return
+}
 func (d *DB) Prepare(query string) (*Stmt, error) {
 	s, err := d.db.Prepare(query)
 	if err != nil {
