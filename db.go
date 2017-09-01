@@ -178,8 +178,9 @@ func (d *DB) Begin() (t *Tx, err error) {
 		return
 	}
 	t = &Tx{
-		log: d.log,
-		tx:  tx,
+		log:   d.log,
+		tx:    tx,
+		debug: d.debug,
 	}
 	return
 }
