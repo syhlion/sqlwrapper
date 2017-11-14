@@ -119,6 +119,9 @@ func (s *Stmt) QueryRow(args ...interface{}) *sql.Row {
 	}()
 	return s.stmt.QueryRow(args...)
 }
+func (s *Stmt) Close() error {
+	return s.stmt.Close()
+}
 
 type DB struct {
 	db    *sql.DB
