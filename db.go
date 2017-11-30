@@ -11,14 +11,16 @@ type Tx struct {
 	log   *log.Logger
 	tx    *sql.Tx
 	debug bool
+	slow  time.Duration
 }
 
 func (t *Tx) Commit() error {
 	st := time.Now()
 	defer func() {
-		if t.debug {
-			et := time.Now()
-			t.log.Println("commit", et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if t.debug || total >= t.slow {
+			t.log.Println("commit", total)
 		}
 	}()
 	return t.tx.Commit()
@@ -26,9 +28,10 @@ func (t *Tx) Commit() error {
 func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
 	st := time.Now()
 	defer func() {
-		if t.debug {
-			et := time.Now()
-			t.log.Println(query, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if t.debug || total >= t.slow {
+			t.log.Println(query, args, total)
 		}
 	}()
 	return t.tx.Exec(query, args...)
@@ -49,9 +52,10 @@ func (t *Tx) Prepare(query string) (*Stmt, error) {
 func (t *Tx) Rollback() error {
 	st := time.Now()
 	defer func() {
-		if t.debug {
-			et := time.Now()
-			t.log.Println("rollback", et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if t.debug || total >= t.slow {
+			t.log.Println("rollback", total)
 		}
 	}()
 	return t.tx.Rollback()
@@ -64,9 +68,10 @@ func (t *Tx) Stmt(stmt *Stmt) *Stmt {
 func (t *Tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	st := time.Now()
 	defer func() {
-		if t.debug {
-			et := time.Now()
-			t.log.Println(query, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if t.debug || total >= t.slow {
+			t.log.Println(query, args, total)
 		}
 	}()
 	return t.tx.Query(query, args...)
@@ -74,9 +79,10 @@ func (t *Tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 func (t *Tx) QueryRow(query string, args ...interface{}) *sql.Row {
 	st := time.Now()
 	defer func() {
-		if t.debug {
-			et := time.Now()
-			t.log.Println(query, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if t.debug || total >= t.slow {
+			t.log.Println(query, args, total)
 		}
 	}()
 	return t.tx.QueryRow(query, args...)
@@ -87,14 +93,16 @@ type Stmt struct {
 	stmt    *sql.Stmt
 	prepare string
 	debug   bool
+	slow    time.Duration
 }
 
 func (s *Stmt) Exec(args ...interface{}) (sql.Result, error) {
 	st := time.Now()
 	defer func() {
-		if s.debug {
-			et := time.Now()
-			s.log.Println(s.prepare, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if s.debug || total >= s.slow {
+			s.log.Println(s.prepare, args, total)
 		}
 	}()
 	return s.stmt.Exec(args...)
@@ -102,9 +110,10 @@ func (s *Stmt) Exec(args ...interface{}) (sql.Result, error) {
 func (s *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
 	st := time.Now()
 	defer func() {
-		if s.debug {
-			et := time.Now()
-			s.log.Println(s.prepare, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if s.debug || total >= s.slow {
+			s.log.Println(s.prepare, args, total)
 		}
 	}()
 	return s.stmt.Query(args...)
@@ -112,9 +121,10 @@ func (s *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
 func (s *Stmt) QueryRow(args ...interface{}) *sql.Row {
 	st := time.Now()
 	defer func() {
-		if s.debug {
-			et := time.Now()
-			s.log.Println(s.prepare, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if s.debug || total >= s.slow {
+			s.log.Println(s.prepare, args, total)
 		}
 	}()
 	return s.stmt.QueryRow(args...)
@@ -126,14 +136,16 @@ func (s *Stmt) Close() error {
 type DB struct {
 	db    *sql.DB
 	log   *log.Logger
+	slow  time.Duration
 	debug bool
 }
 
-func WrapperDB(db *sql.DB, debug bool) (d *DB) {
+func WrapperDB(db *sql.DB, debug bool, slow time.Duration) (d *DB) {
 	l := log.New(os.Stdout, "[sql]", log.LstdFlags)
 
 	return &DB{
 		db:    db,
+		slow:  slow,
 		debug: debug,
 		log:   l,
 	}
@@ -141,9 +153,10 @@ func WrapperDB(db *sql.DB, debug bool) (d *DB) {
 func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	st := time.Now()
 	defer func() {
-		if d.debug {
-			et := time.Now()
-			d.log.Println(query, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			d.log.Println(query, args, total)
 		}
 	}()
 	return d.db.Exec(query, args...)
@@ -153,9 +166,10 @@ func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	st := time.Now()
 	defer func() {
-		if d.debug {
-			et := time.Now()
-			d.log.Println(query, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			d.log.Println(query, args, total)
 		}
 	}()
 	return d.db.Query(query, args...)
@@ -164,9 +178,10 @@ func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 	st := time.Now()
 	defer func() {
-		if d.debug {
-			et := time.Now()
-			d.log.Println(query, args, et.Sub(st))
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			d.log.Println(query, args, total)
 		}
 	}()
 	return d.db.QueryRow(query, args...)
@@ -184,6 +199,7 @@ func (d *DB) Begin() (t *Tx, err error) {
 		log:   d.log,
 		tx:    tx,
 		debug: d.debug,
+		slow:  d.slow,
 	}
 	return
 }
@@ -197,5 +213,6 @@ func (d *DB) Prepare(query string) (*Stmt, error) {
 		stmt:    s,
 		prepare: query,
 		debug:   d.debug,
+		slow:    d.slow,
 	}, nil
 }
