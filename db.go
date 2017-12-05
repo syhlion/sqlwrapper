@@ -46,6 +46,7 @@ func (t *Tx) Prepare(query string) (*Stmt, error) {
 		stmt:    s,
 		debug:   t.debug,
 		prepare: query,
+		slow:    t.slow,
 	}
 	return stmt, nil
 }
