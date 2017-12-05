@@ -141,7 +141,7 @@ type DB struct {
 }
 
 func WrapperDB(db *sql.DB, debug bool, slow time.Duration) (d *DB) {
-	l := log.New(os.Stdout, "[sql]", log.LstdFlags)
+	l := log.New(os.Stderr, "[sql]", log.LstdFlags)
 
 	return &DB{
 		db:    db,
