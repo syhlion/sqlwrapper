@@ -13,7 +13,7 @@ func main(){
     if err != nil {
         return nil, err
     }
-    db := WrapperDB(db,true)
+    db := WrapperDB(db,true,1*time.Second)
 
 
     // it log [sql] select * from member where id = ?  1  2s
