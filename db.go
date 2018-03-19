@@ -2,13 +2,25 @@ package sqlwrapper
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	log.SetFormatter(&log.JSONFormatter{})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
+
+	// Only log the warning severity or above.
+	log.SetLevel(log.DebugLevel)
+}
+
 type Tx struct {
-	log   *log.Logger
 	tx    *sql.Tx
 	debug bool
 	slow  time.Duration
@@ -20,7 +32,10 @@ func (t *Tx) Commit() error {
 		et := time.Now()
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
-			t.log.Println("commit", total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("tx commit")
 		}
 	}()
 	return t.tx.Commit()
@@ -31,7 +46,12 @@ func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
 		et := time.Now()
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
-			t.log.Println(query, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"sql":      query,
+				"args":     args,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("tx exec")
 		}
 	}()
 	return t.tx.Exec(query, args...)
@@ -42,7 +62,6 @@ func (t *Tx) Prepare(query string) (*Stmt, error) {
 		return nil, err
 	}
 	stmt := &Stmt{
-		log:     t.log,
 		stmt:    s,
 		debug:   t.debug,
 		prepare: query,
@@ -56,7 +75,10 @@ func (t *Tx) Rollback() error {
 		et := time.Now()
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
-			t.log.Println("rollback", total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("tx rollback")
 		}
 	}()
 	return t.tx.Rollback()
@@ -72,7 +94,12 @@ func (t *Tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 		et := time.Now()
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
-			t.log.Println(query, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"sql":      query,
+				"args":     args,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("tx query")
 		}
 	}()
 	return t.tx.Query(query, args...)
@@ -83,14 +110,18 @@ func (t *Tx) QueryRow(query string, args ...interface{}) *sql.Row {
 		et := time.Now()
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
-			t.log.Println(query, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"sql":      query,
+				"args":     args,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("tx query row")
 		}
 	}()
 	return t.tx.QueryRow(query, args...)
 }
 
 type Stmt struct {
-	log     *log.Logger
 	stmt    *sql.Stmt
 	prepare string
 	debug   bool
@@ -103,7 +134,12 @@ func (s *Stmt) Exec(args ...interface{}) (sql.Result, error) {
 		et := time.Now()
 		total := et.Sub(st)
 		if s.debug || total >= s.slow {
-			s.log.Println(s.prepare, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"args":     args,
+				"sql":      s.prepare,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("stmt query row")
 		}
 	}()
 	return s.stmt.Exec(args...)
@@ -114,7 +150,12 @@ func (s *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
 		et := time.Now()
 		total := et.Sub(st)
 		if s.debug || total >= s.slow {
-			s.log.Println(s.prepare, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"args":     args,
+				"sql":      s.prepare,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("stmt query")
 		}
 	}()
 	return s.stmt.Query(args...)
@@ -125,7 +166,12 @@ func (s *Stmt) QueryRow(args ...interface{}) *sql.Row {
 		et := time.Now()
 		total := et.Sub(st)
 		if s.debug || total >= s.slow {
-			s.log.Println(s.prepare, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"args":     args,
+				"sql":      s.prepare,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("stmt query row")
 		}
 	}()
 	return s.stmt.QueryRow(args...)
@@ -136,19 +182,16 @@ func (s *Stmt) Close() error {
 
 type DB struct {
 	db    *sql.DB
-	log   *log.Logger
 	slow  time.Duration
 	debug bool
 }
 
 func WrapperDB(db *sql.DB, debug bool, slow time.Duration) (d *DB) {
-	l := log.New(os.Stderr, "[sql]", log.LstdFlags)
 
 	return &DB{
 		db:    db,
 		slow:  slow,
 		debug: debug,
-		log:   l,
 	}
 }
 func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
@@ -157,7 +200,12 @@ func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 		et := time.Now()
 		total := et.Sub(st)
 		if d.debug || total >= d.slow {
-			d.log.Println(query, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"args":     args,
+				"sql":      query,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("db exec")
 		}
 	}()
 	return d.db.Exec(query, args...)
@@ -170,7 +218,12 @@ func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 		et := time.Now()
 		total := et.Sub(st)
 		if d.debug || total >= d.slow {
-			d.log.Println(query, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"args":     args,
+				"sql":      query,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("db query")
 		}
 	}()
 	return d.db.Query(query, args...)
@@ -182,7 +235,12 @@ func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 		et := time.Now()
 		total := et.Sub(st)
 		if d.debug || total >= d.slow {
-			d.log.Println(query, args, total)
+			log.WithFields(log.Fields{
+				"use-time": total,
+				"args":     args,
+				"sql":      query,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("db query row")
 		}
 	}()
 	return d.db.QueryRow(query, args...)
@@ -197,7 +255,6 @@ func (d *DB) Begin() (t *Tx, err error) {
 		return
 	}
 	t = &Tx{
-		log:   d.log,
 		tx:    tx,
 		debug: d.debug,
 		slow:  d.slow,
@@ -210,7 +267,6 @@ func (d *DB) Prepare(query string) (*Stmt, error) {
 		return nil, err
 	}
 	return &Stmt{
-		log:     d.log,
 		stmt:    s,
 		prepare: query,
 		debug:   d.debug,
