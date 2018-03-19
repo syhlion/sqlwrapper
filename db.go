@@ -2,11 +2,52 @@ package sqlwrapper
 
 import (
 	"database/sql"
+	"errors"
+	"net"
 	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 )
+
+var ip string
+
+func getExternalIP() (string, error) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue // interface down
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue // loopback interface
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return "", err
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			ip = ip.To4()
+			if ip == nil {
+				continue // not an ipv4 address
+			}
+			return ip.String(), nil
+		}
+	}
+	return "", errors.New("are you connected to the network?")
+}
 
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
@@ -18,6 +59,7 @@ func init() {
 
 	// Only log the warning severity or above.
 	log.SetLevel(log.DebugLevel)
+	ip, _ = getExternalIP()
 }
 
 type Tx struct {
@@ -34,6 +76,7 @@ func (t *Tx) Commit() error {
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
 				"use-time": total,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("tx commit")
 		}
@@ -48,6 +91,7 @@ func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
 				"use-time": total,
+				"ip":       ip,
 				"sql":      query,
 				"args":     args,
 				"name":     "syhlion/sqlwrapper",
@@ -77,6 +121,7 @@ func (t *Tx) Rollback() error {
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
 				"use-time": total,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("tx rollback")
 		}
@@ -98,6 +143,7 @@ func (t *Tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 				"use-time": total,
 				"sql":      query,
 				"args":     args,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("tx query")
 		}
@@ -114,6 +160,7 @@ func (t *Tx) QueryRow(query string, args ...interface{}) *sql.Row {
 				"use-time": total,
 				"sql":      query,
 				"args":     args,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("tx query row")
 		}
@@ -138,6 +185,7 @@ func (s *Stmt) Exec(args ...interface{}) (sql.Result, error) {
 				"use-time": total,
 				"args":     args,
 				"sql":      s.prepare,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("stmt query row")
 		}
@@ -154,6 +202,7 @@ func (s *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
 				"use-time": total,
 				"args":     args,
 				"sql":      s.prepare,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("stmt query")
 		}
@@ -170,6 +219,7 @@ func (s *Stmt) QueryRow(args ...interface{}) *sql.Row {
 				"use-time": total,
 				"args":     args,
 				"sql":      s.prepare,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("stmt query row")
 		}
@@ -204,6 +254,7 @@ func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 				"use-time": total,
 				"args":     args,
 				"sql":      query,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("db exec")
 		}
@@ -222,6 +273,7 @@ func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 				"use-time": total,
 				"args":     args,
 				"sql":      query,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("db query")
 		}
@@ -239,6 +291,7 @@ func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 				"use-time": total,
 				"args":     args,
 				"sql":      query,
+				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("db query row")
 		}
