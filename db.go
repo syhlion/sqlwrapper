@@ -75,7 +75,7 @@ func (t *Tx) Commit() error {
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("tx commit")
@@ -90,7 +90,7 @@ func (t *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"ip":       ip,
 				"sql":      query,
 				"args":     args,
@@ -120,7 +120,7 @@ func (t *Tx) Rollback() error {
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"ip":       ip,
 				"name":     "syhlion/sqlwrapper",
 			}).Debug("tx rollback")
@@ -140,7 +140,7 @@ func (t *Tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"sql":      query,
 				"args":     args,
 				"ip":       ip,
@@ -157,7 +157,7 @@ func (t *Tx) QueryRow(query string, args ...interface{}) *sql.Row {
 		total := et.Sub(st)
 		if t.debug || total >= t.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"sql":      query,
 				"args":     args,
 				"ip":       ip,
@@ -182,7 +182,7 @@ func (s *Stmt) Exec(args ...interface{}) (sql.Result, error) {
 		total := et.Sub(st)
 		if s.debug || total >= s.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"args":     args,
 				"sql":      s.prepare,
 				"ip":       ip,
@@ -199,7 +199,7 @@ func (s *Stmt) Query(args ...interface{}) (*sql.Rows, error) {
 		total := et.Sub(st)
 		if s.debug || total >= s.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"args":     args,
 				"sql":      s.prepare,
 				"ip":       ip,
@@ -216,7 +216,7 @@ func (s *Stmt) QueryRow(args ...interface{}) *sql.Row {
 		total := et.Sub(st)
 		if s.debug || total >= s.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"args":     args,
 				"sql":      s.prepare,
 				"ip":       ip,
@@ -251,7 +251,7 @@ func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 		total := et.Sub(st)
 		if d.debug || total >= d.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"args":     args,
 				"sql":      query,
 				"ip":       ip,
@@ -270,7 +270,7 @@ func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 		total := et.Sub(st)
 		if d.debug || total >= d.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"args":     args,
 				"sql":      query,
 				"ip":       ip,
@@ -288,7 +288,7 @@ func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 		total := et.Sub(st)
 		if d.debug || total >= d.slow {
 			log.WithFields(log.Fields{
-				"use-time": total,
+				"use-time": total.String(),
 				"args":     args,
 				"sql":      query,
 				"ip":       ip,
