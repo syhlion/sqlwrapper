@@ -1,6 +1,7 @@
 package sqlwrapper
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"net"
@@ -244,6 +245,24 @@ func WrapperDB(db *sql.DB, debug bool, slow time.Duration) (d *DB) {
 		debug: debug,
 	}
 }
+func (d *DB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	st := time.Now()
+	defer func() {
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			log.WithFields(log.Fields{
+				"use-time": total.String(),
+				"args":     args,
+				"sql":      query,
+				"ip":       ip,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("db exec")
+		}
+	}()
+	return d.db.ExecContext(ctx, query, args...)
+
+}
 func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	st := time.Now()
 	defer func() {
@@ -263,6 +282,23 @@ func (d *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 
 }
 
+func (d *DB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	st := time.Now()
+	defer func() {
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			log.WithFields(log.Fields{
+				"use-time": total.String(),
+				"args":     args,
+				"sql":      query,
+				"ip":       ip,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("db query")
+		}
+	}()
+	return d.db.QueryContext(ctx, query, args...)
+}
 func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	st := time.Now()
 	defer func() {
@@ -281,6 +317,53 @@ func (d *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return d.db.Query(query, args...)
 }
 
+func (d *DB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	st := time.Now()
+	defer func() {
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			log.WithFields(log.Fields{
+				"use-time": total.String(),
+				"args":     args,
+				"sql":      query,
+				"ip":       ip,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("db query row")
+		}
+	}()
+	return d.db.QueryRowContext(ctx, query, args...)
+}
+func (d *DB) Ping() error {
+	st := time.Now()
+	defer func() {
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			log.WithFields(log.Fields{
+				"use-time": total.String(),
+				"ip":       ip,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("ping ")
+		}
+	}()
+	return d.db.Ping()
+}
+func (d *DB) PingContext(ctx context.Context) error {
+	st := time.Now()
+	defer func() {
+		et := time.Now()
+		total := et.Sub(st)
+		if d.debug || total >= d.slow {
+			log.WithFields(log.Fields{
+				"use-time": total.String(),
+				"ip":       ip,
+				"name":     "syhlion/sqlwrapper",
+			}).Debug("ping ")
+		}
+	}()
+	return d.db.PingContext(ctx)
+}
 func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 	st := time.Now()
 	defer func() {
@@ -301,6 +384,18 @@ func (d *DB) QueryRow(query string, args ...interface{}) *sql.Row {
 func (d *DB) Close() error {
 	return d.db.Close()
 }
+func (d *DB) BeginTX(ctx context.Context, opts *sql.TxOptions) (t *Tx, err error) {
+	tx, err := d.db.BeginTx(ctx, opts)
+	if err != nil {
+		return
+	}
+	t = &Tx{
+		tx:    tx,
+		debug: d.debug,
+		slow:  d.slow,
+	}
+	return
+}
 
 func (d *DB) Begin() (t *Tx, err error) {
 	tx, err := d.db.Begin()
@@ -313,6 +408,18 @@ func (d *DB) Begin() (t *Tx, err error) {
 		slow:  d.slow,
 	}
 	return
+}
+func (d *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
+	s, err := d.db.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return &Stmt{
+		stmt:    s,
+		prepare: query,
+		debug:   d.debug,
+		slow:    d.slow,
+	}, nil
 }
 func (d *DB) Prepare(query string) (*Stmt, error) {
 	s, err := d.db.Prepare(query)
